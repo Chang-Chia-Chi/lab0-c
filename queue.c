@@ -53,20 +53,22 @@ bool q_insert_head(queue_t *q, char *s)
         free(newh);
         return false;
     }
-    int s_len = strlen(s);
-    /* Don't forget space for \0 */
-    newh->value = malloc(sizeof(char) * (s_len + 1));
-    if (!newh->value) {
-        free(newh->value);
-        free(newh);
-        return false;
+    if (s) {
+        int s_len = strlen(s);
+        /* Don't forget space for \0 */
+        newh->value = malloc(sizeof(char) * (s_len + 1));
+        if (!newh->value) {
+            free(newh->value);
+            free(newh);
+            return false;
+        }
+        strncpy(newh->value, s, s_len + 1);
     }
-    strncpy(newh->value, s, s_len + 1);
     newh->next = q->head;
     q->head = newh;
     if (!q->tail)
         q->tail = newh;
-    (q->size)++;
+    q->size++;
     return true;
 }
 
@@ -86,15 +88,17 @@ bool q_insert_tail(queue_t *q, char *s)
         free(newh);
         return false;
     }
-    int s_len = strlen(s);
-    /* Don't forget space for \0 */
-    newh->value = malloc(sizeof(char) * (s_len + 1));
-    if (!newh->value) {
-        free(newh->value);
-        free(newh);
-        return false;
+    if (s) {
+        int s_len = strlen(s);
+        /* Don't forget space for \0 */
+        newh->value = malloc(sizeof(char) * (s_len + 1));
+        if (!newh->value) {
+            free(newh->value);
+            free(newh);
+            return false;
+        }
+        strncpy(newh->value, s, s_len + 1);
     }
-    strncpy(newh->value, s, s_len + 1);
     if (!q->head) {
         q->head = newh;
         q->tail = newh;
@@ -104,7 +108,7 @@ bool q_insert_tail(queue_t *q, char *s)
     }
     /* To avoid forming linked list cycle */
     q->tail->next = NULL;
-    (q->size)++;
+    q->size++;
     return true;
 }
 
@@ -130,7 +134,7 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
     list_ele_t *tmp = q->head;
     q->head = q->head->next;
     free(tmp);
-    (q->size)--;
+    q->size--;
     return true;
 }
 
@@ -177,8 +181,63 @@ void q_reverse(queue_t *q)
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
  */
+list_ele_t *merge(list_ele_t *n1, list_ele_t *n2)
+{
+    list_ele_t *dummy = NULL;
+    list_ele_t *tmp = NULL;
+    if (strcasecmp(n1->value, n2->value) <= 0) {
+        dummy = n1;
+        n1 = n1->next;
+    } else {
+        dummy = n2;
+        n2 = n2->next;
+    }
+    tmp = dummy;
+    while (n1 && n2) {
+        if (strcasecmp(n1->value, n2->value) <= 0) {
+            tmp->next = n1;
+            tmp = tmp->next;
+            n1 = n1->next;
+        } else {
+            tmp->next = n2;
+            tmp = tmp->next;
+            n2 = n2->next;
+        }
+    }
+    if (!n1)
+        tmp->next = n2;
+    if (!n2)
+        tmp->next = n1;
+    return dummy;
+}
+
+list_ele_t *merge_sort(list_ele_t *head)
+{
+    if (!head || !head->next)
+        return head;
+    list_ele_t *prev;
+    list_ele_t *slow = head;
+    list_ele_t *fast = head;
+    while (fast && fast->next) {
+        prev = slow;
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    prev->next = NULL;
+    list_ele_t *n1 = merge_sort(head);
+    list_ele_t *n2 = merge_sort(slow);
+    return merge(n1, n2);
+}
+
 void q_sort(queue_t *q)
 {
-    /* TODO: You need to write the code for this function */
-    /* TODO: Remove the above comment when you are about to implement. */
+    if (!q || !q->head || !q->head->next)
+        return;
+    q->head = merge_sort(q->head);
+    list_ele_t *tmp = q->head;
+    while (tmp->next) {
+        tmp = tmp->next;
+    }
+    q->tail = tmp;
+    return;
 }
